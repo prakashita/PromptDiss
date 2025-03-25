@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, SkipForward, Send } from 'lucide-react';
 import { useGameStore } from '../store';
+import Confetti from 'react-confetti';
+import { useWindowSize } from 'react-use'; // or you can implement your own window size hook
 
 export const Game = () => {
   const {
@@ -19,6 +21,8 @@ export const Game = () => {
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [showConfetti, setShowConfetti] = useState(false);
+  const { width, height } = useWindowSize(); // Get window dimensions
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -32,6 +36,16 @@ export const Game = () => {
 
     return () => clearInterval(interval);
   }, [timer, isPaused]);
+  // Clean up confetti after animation
+  useEffect(() => {
+    if (showConfetti) {
+      const timer = setTimeout(() => {
+        setShowConfetti(false);
+      }, 5000); // Show confetti for 5 seconds
+
+      return () => clearTimeout(timer);
+    }
+  }, [showConfetti]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -94,8 +108,10 @@ export const Game = () => {
       const isCorrect = aiWord === currentWord.toLowerCase();
 
       if (isCorrect) {
+        console.log('Correct answer! Triggering confetti...');
         setMessages(prev => [...prev, `AI: The word is "${currentWord}"!`]);
         incrementScore();
+        setShowConfetti(true); // Trigger confetti
       } else {
         setMessages(prev => [...prev, `AI: That's not the word I'm thinking of..."${aiWord}"!`]);
       }
@@ -118,6 +134,17 @@ export const Game = () => {
 
   return (
     <div className="h-screen flex bg-[#0a192f]">
+      {/* Confetti overlay */}
+      {showConfetti && (
+        <Confetti
+          width={width}
+          height={height}
+          recycle={false}
+          numberOfPieces={500}
+          gravity={0.2}
+        />
+      )}
+      
       {/* Left Panel */}
       <div className="w-1/3 p-6 flex flex-col border-r border-[#1e2d3d]">
         <div className="flex justify-between items-center mb-6">

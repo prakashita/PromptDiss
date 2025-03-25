@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { GameState, Player } from './types'; // Make sure Player type is imported
 import { wordsList } from './data/word';
 
-const INITIAL_TIME = 60; // 5 minutes in seconds
+const INITIAL_TIME = 300; // 5 minutes in seconds
 
 // Helper function to load high scores from localStorage
 const loadHighScores = (): Player[] => {
