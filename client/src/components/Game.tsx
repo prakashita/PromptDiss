@@ -68,11 +68,11 @@ export const Game = () => {
   return (
     <div className="h-screen flex bg-[#0a192f]">
       {/* Left Panel */}
-      <div className="w-1/2 p-6 flex flex-col border-r border-[#1e2d3d]">
+      <div className="w-1/3 p-6 flex flex-col border-r border-[#1e2d3d]">
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-lg font-medium text-[#8892b0] mb-1">Current Word</h1>
-            <h2 className="text-2xl font-bold text-[#64ffda]">{currentWord}</h2>
+            <h2 className="text-4xl font-bold text-[#64ffda]">{currentWord}</h2>
           </div>
           <div className="flex items-center gap-2 bg-[#112240] px-4 py-2 rounded-lg">
             <Clock className="w-4 h-4 text-[#64ffda]" />
@@ -87,11 +87,11 @@ export const Game = () => {
 
         <div className="flex-grow">
           <h3 className="text-sm font-medium text-[#8892b0] mb-3">Blacklisted Words:</h3>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-col gap-2">
             {blacklistedWords.map((word, index) => (
               <div
                 key={index}
-                className="bg-[#112240] text-[#64ffda] px-3 py-1 rounded-lg text-sm font-medium"
+                className="bg-[#112240] text-[#64ffda] px-3 py-1 rounded-lg text-xl font-medium"
               >
                 {word}
               </div>
@@ -109,7 +109,7 @@ export const Game = () => {
       </div>
 
       {/* Right Panel - Chat */}
-      <div className="w-1/2 flex flex-col">
+      <div className="w-2/3 flex flex-col">
         <div className="flex-grow p-6 overflow-y-auto">
           <div className="space-y-3">
             {messages.map((message, index) => (
