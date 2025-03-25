@@ -1,4 +1,4 @@
-# Tech Guess Game
+# Tech Word Guess Game
 
 A fun and interactive game where players provide hints to help an AI guess a tech-related word while avoiding a set of blacklisted words.
 
