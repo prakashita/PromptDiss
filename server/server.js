@@ -23,7 +23,7 @@ app.post('/api/generate-word', async (req, res) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 model: "gemma-3-27b-it", // Match your loaded model
-                prompt: `Return ONLY a single lowercase English noun related to: ${prompt}. No sentences, punctuation, or explanations.`,
+                prompt: `Return ONLY a single lowercase English noun related to or close to: ${prompt}. No sentences, punctuation, or explanations.`,
                 temperature: 0.7,
                 max_tokens: 10
             })

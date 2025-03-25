@@ -18,6 +18,7 @@ export const Game = () => {
 
   const [prompt, setPrompt] = useState('');
   const [messages, setMessages] = useState<string[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -38,24 +39,74 @@ export const Game = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
+  const validatePrompt = (prompt: string) => {
+    const promptLower = prompt.toLowerCase();
+    const wordsInPrompt = promptLower.split(/\s+/); // Split into words
+    
+    // Check if prompt contains current word as a separate word
+    const currentWordLower = currentWord.toLowerCase();
+    if (wordsInPrompt.includes(currentWordLower)) {
+      return { valid: false, message: "Your prompt contains the current word!" };
+    }
+    
+    // Check if prompt contains any blacklisted words as separate words
+    for (const word of blacklistedWords) {
+      const wordLower = word.toLowerCase();
+      if (wordsInPrompt.includes(wordLower)) {
+        return { valid: false, message: `Your prompt contains a blacklisted word: ${word}` };
+      }
+    }
+    
+    return { valid: true };
+};
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
+    // Validate prompt first
+    const validation = validatePrompt(prompt);
+    if (!validation.valid) {
+      setMessages(prev => [...prev, `System: ${validation.message}`]);
+      return;
+    }
+
     pauseTimer();
+    setIsLoading(true);
     setMessages(prev => [...prev, `You: ${prompt}`]);
-    
-    setTimeout(() => {
-      const isCorrect = Math.random() > 0.5;
+
+    try {
+      // Send prompt to backend
+      const response = await fetch('http://localhost:3000/api/generate-word', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) throw new Error('Failed to get AI response');
+
+      const data = await response.json();
+      const aiWord = data.word;
+
+      // Check if AI word matches current word
+      const isCorrect = aiWord === currentWord.toLowerCase();
+
       if (isCorrect) {
         setMessages(prev => [...prev, `AI: The word is "${currentWord}"!`]);
         incrementScore();
       } else {
-        setMessages(prev => [...prev, `AI: That's not the word I'm thinking of...`]);
+        setMessages(prev => [...prev, `AI: That's not the word I'm thinking of..."${aiWord}"!`]);
       }
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prev => [...prev, `System: Error processing your prompt`]);
+    } finally {
       setPrompt('');
+      setIsLoading(false);
       resumeTimer();
-    }, 2000);
+    }
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -118,12 +169,19 @@ export const Game = () => {
                 className={`p-3 rounded-lg max-w-[80%] ${
                   message.startsWith('You:')
                     ? 'bg-[#112240] ml-auto'
-                    : 'bg-[#1e2d3d]'
+                    : message.startsWith('AI:')
+                    ? 'bg-[#1e2d3d]'
+                    : 'bg-[#ff5555]'
                 }`}
               >
                 <p className="text-sm text-[#8892b0]">{message}</p>
               </div>
             ))}
+            {isLoading && (
+              <div className="p-3 rounded-lg max-w-[80%] bg-[#1e2d3d]">
+                <p className="text-sm text-[#8892b0]">AI is thinking...</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -135,10 +193,12 @@ export const Game = () => {
               onKeyDown={handleKeyPress}
               placeholder="Write your prompt here... (Press Enter to send)"
               className="flex-1 px-3 py-2 rounded-lg bg-[#112240] border border-[#1e2d3d] focus:outline-none focus:border-[#64ffda] resize-none h-[50px] text-sm text-[#8892b0] placeholder-[#4a5567]"
+              disabled={isLoading}
             />
             <button
               type="submit"
               className="bg-[#64ffda] text-[#0a192f] px-4 rounded-lg hover:bg-[#4cd8b9] transition-colors flex items-center gap-2"
+              disabled={isLoading}
             >
               <Send className="w-4 h-4" />
             </button>
