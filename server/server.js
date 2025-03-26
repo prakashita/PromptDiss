@@ -18,7 +18,7 @@ app.post('/api/generate-word', async (req, res) => {
     if (!prompt) return res.status(400).json({ error: "Prompt is required" });
 
     try {
-        const response = await fetch('http://192.168.0.182:9000/v1/completions', {
+        const response = await fetch('http://192.168.0.246:8080/v1/completions', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({

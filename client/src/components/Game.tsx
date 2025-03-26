@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, SkipForward, Send } from 'lucide-react';
 import { useGameStore } from '../store';
 import Confetti from 'react-confetti';
-import { useWindowSize } from 'react-use'; // or you can implement your own window size hook
+import { useWindowSize } from 'react-use';
 
 export const Game = () => {
   const {
@@ -22,7 +22,17 @@ export const Game = () => {
   const [messages, setMessages] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
-  const { width, height } = useWindowSize(); // Get window dimensions
+  const { width, height } = useWindowSize();
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,12 +46,12 @@ export const Game = () => {
 
     return () => clearInterval(interval);
   }, [timer, isPaused]);
-  // Clean up confetti after animation
+
   useEffect(() => {
     if (showConfetti) {
       const timer = setTimeout(() => {
         setShowConfetti(false);
-      }, 5000); // Show confetti for 5 seconds
+      }, 5000);
 
       return () => clearTimeout(timer);
     }
@@ -55,15 +65,13 @@ export const Game = () => {
 
   const validatePrompt = (prompt: string) => {
     const promptLower = prompt.toLowerCase();
-    const wordsInPrompt = promptLower.split(/\s+/); // Split into words
+    const wordsInPrompt = promptLower.split(/\s+/);
     
-    // Check if prompt contains current word as a separate word
     const currentWordLower = currentWord.toLowerCase();
     if (wordsInPrompt.includes(currentWordLower)) {
       return { valid: false, message: "Your prompt contains the current word!" };
     }
     
-    // Check if prompt contains any blacklisted words as separate words
     for (const word of blacklistedWords) {
       const wordLower = word.toLowerCase();
       if (wordsInPrompt.includes(wordLower)) {
@@ -72,13 +80,12 @@ export const Game = () => {
     }
     
     return { valid: true };
-};
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim()) return;
 
-    // Validate prompt first
     const validation = validatePrompt(prompt);
     if (!validation.valid) {
       setMessages(prev => [...prev, `System: ${validation.message}`]);
@@ -90,7 +97,6 @@ export const Game = () => {
     setMessages(prev => [...prev, `You: ${prompt}`]);
 
     try {
-      // Send prompt to backend
       const response = await fetch('http://localhost:3000/api/generate-word', {
         method: 'POST',
         headers: {
@@ -104,16 +110,15 @@ export const Game = () => {
       const data = await response.json();
       const aiWord = data.word;
 
-      // Check if AI word matches current word
       const isCorrect = aiWord === currentWord.toLowerCase();
 
       if (isCorrect) {
         console.log('Correct answer! Triggering confetti...');
-        setMessages(prev => [...prev, `AI: The word is "${currentWord}"!`]);
+        setMessages(prev => [...prev, `AI: ${currentWord}`]);
         incrementScore();
-        setShowConfetti(true); // Trigger confetti
+        setShowConfetti(true);
       } else {
-        setMessages(prev => [...prev, `AI: That's not the word I'm thinking of..."${aiWord}"!`]);
+        setMessages(prev => [...prev, `AI: ${aiWord}`]);
       }
     } catch (error) {
       console.error('Error:', error);
@@ -134,7 +139,6 @@ export const Game = () => {
 
   return (
     <div className="h-screen flex bg-[#0a192f]">
-      {/* Confetti overlay */}
       {showConfetti && (
         <Confetti
           width={width}
@@ -193,22 +197,28 @@ export const Game = () => {
             {messages.map((message, index) => (
               <div
                 key={index}
-                className={`p-3 rounded-lg max-w-[80%] ${
+                className={`p-3 rounded-lg ${
                   message.startsWith('You:')
                     ? 'bg-[#112240] ml-auto'
                     : message.startsWith('AI:')
-                    ? 'bg-[#1e2d3d]'
-                    : 'bg-[#ff5555]'
+                    ? 'bg-[#1e2d3d] mr-auto'
+                    : 'bg-[#ff5555] mr-auto'
                 }`}
+                style={{
+                  maxWidth: '80%',
+                  minWidth: '20%',
+                  width: 'fit-content'
+                }}
               >
-                <p className="text-sm text-[#8892b0]">{message}</p>
+                <p className="text-sm text-[#8892b0] break-words">{message}</p>
               </div>
             ))}
             {isLoading && (
-              <div className="p-3 rounded-lg max-w-[80%] bg-[#1e2d3d]">
+              <div className="p-3 rounded-lg max-w-[80%] bg-[#1e2d3d] mr-auto">
                 <p className="text-sm text-[#8892b0]">AI is thinking...</p>
               </div>
             )}
+            <div ref={messagesEndRef} />
           </div>
         </div>
 
